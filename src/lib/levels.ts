@@ -1,11 +1,14 @@
 export type Level = {
-  code: string       // "a1", "a2" etc - used in the URL
-  label: string      // "A1", "A2" etc - displayed to user
-  name: string       // "Beginner" etc
+  code: string
+  label: string
+  name: string
   description: string
   wordCount: number
-  color: string      // Tailwind color class for each card
+  color: string
+  textColor: string    // ← NEW
+  emoji: string        // ← NEW
 }
+
 
 export const levels: Level[] = [
   {
@@ -15,29 +18,37 @@ export const levels: Level[] = [
     description: "Essential everyday words and phrases",
     wordCount: 834,
     color: "bg-emerald-500",
+    textColor: "text-emerald-600",
+    emoji: "🌱",
   },
   {
     code: "a2",
     label: "A2",
     name: "Elementary",
     description: "Common situations and familiar topics",
-    wordCount: 1200,
+    wordCount: 1408,
     color: "bg-blue-500",
+    textColor: "text-blue-600",
+    emoji: "📘",
   },
   {
     code: "b1",
     label: "B1",
     name: "Intermediate",
     description: "Main points on familiar matters",
-    wordCount: 1500,
+    wordCount: 2000,
     color: "bg-violet-500",
+    textColor: "text-violet-600",
+    emoji: "🚀",
   },
   {
     code: "b2",
     label: "B2",
     name: "Upper Intermediate",
     description: "Complex texts and technical discussion",
-    wordCount: 1800,
+    wordCount: 2000,
     color: "bg-orange-500",
+    textColor: "text-orange-600",
+    emoji: "⚡",
   },
 ]
