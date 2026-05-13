@@ -53,7 +53,7 @@ export default function Home() {
           {[
             { num: "8,242", label: "Words" },
             { num: "4", label: "Levels" },
-            { num: "A1–B2", label: "CEFR range" },
+            { num: "A1–B2", label: "CEFR" },
             { num: "Free", label: "Always" },
           ].map((s) => (
             <div key={s.label} className="px-5 py-3 text-center">
