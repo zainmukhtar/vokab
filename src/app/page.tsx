@@ -9,10 +9,14 @@ export default function Home() {
       <section className="bg-white px-6 pt-20 pb-24 text-center">
 
         {/* Pill */}
-        <div className="inline-flex items-center gap-2 bg-zinc-100 border border-zinc-200 rounded-full px-3 py-1 mb-6">
-          <span className="text-sm">🇩🇪</span>
-          <span className="text-zinc-500 text-xs font-medium">
-            German vocabulary · A1 to B2
+        <div className="inline-flex items-center gap-2 px-3 py-1 mb-6">
+          <img
+            src="/icons/icon-384x384.png"
+            alt="Vokab"
+            className="w-32 h-32 rounded-md"
+          />
+          <span className="text-6xl font-bold text-zinc-700 tracking-tight leading-none">
+            okab
           </span>
         </div>
 
@@ -163,18 +167,9 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-[#09090b] text-center pb-10 border-t border-zinc-800">
-        <p className="text-zinc-600 text-xs">
-          Powered by{" "}
-          <a
-            href="https://rep12.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-zinc-400 transition-colors underline underline-offset-2"
-          >
-            rep12 API
-          </a>
-          {" "}· Built with Next.js
+      <footer className="bg-[#000] text-center py-10">
+        <p className="text-zinc-400 text-sm">
+          Made with ❤️ by Zayn Mukhtar{" "}
         </p>
       </footer>
 
