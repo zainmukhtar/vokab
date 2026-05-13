@@ -30,6 +30,7 @@ export default function LearnPage() {
     learned: 0,
   })
   const [animating, setAnimating] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
 
   // Load stats from localStorage on mount
   useEffect(() => {
@@ -104,6 +105,15 @@ export default function LearnPage() {
     stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0
 
   const currentWord = words[currentIndex]
+
+  const handleReset = () => {
+    const fresh = { streak: 0, correct: 0, total: 0, learned: 0 }
+    setStats(fresh)
+    localStorage.removeItem(`vokab-stats-${levelCode}`)
+    setCurrentIndex(0)
+    setIsRevealed(false)
+    setShowResetModal(false)
+  }
 
   // ── Loading ──
   if (isLoading) {
@@ -348,25 +358,131 @@ export default function LearnPage() {
         )}
 
         {/* ── STATS ── */}
-        <div className="grid grid-cols-3 gap-3 w-full">
-          {[
-            { value: stats.streak, label: "Streak" },
-            { value: `${accuracy}%`, label: "Accuracy" },
-            { value: stats.learned, label: "Learned" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="bg-[#1c1c1e] border border-zinc-800 rounded-xl py-4 text-center"
+        <div className="w-full">
+          <div className="grid grid-cols-3 gap-3 w-full mb-2">
+            {[
+              { value: stats.streak, label: "Streak" },
+              { value: `${accuracy}%`, label: "Accuracy" },
+              { value: stats.learned, label: "Learned" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="bg-[#1c1c1e] border border-zinc-800 rounded-xl py-4 text-center"
+              >
+                <div className="text-xl font-medium text-white mb-0.5">
+                  {s.value}
+                </div>
+                <div className="text-zinc-600 text-xs uppercase tracking-widest">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Reset button */}
+          <button
+            onClick={() => setShowResetModal(true)}
+            className="w-full flex items-center justify-center gap-4 py-4 mt-6 rounded-xl border border-zinc-600 text-zinc-600 text-base hover:border-zinc-300 hover:text-zinc-300 transition-colors duration-200"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <div className="text-xl font-medium text-white mb-0.5">
-                {s.value}
-              </div>
-              <div className="text-zinc-600 text-xs uppercase tracking-widest">
-                {s.label}
-              </div>
-            </div>
-          ))}
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Reset progress
+          </button>
         </div>
+
+        {/* ── RESET MODAL ── */}
+        {showResetModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowResetModal(false)}
+          >
+            <div
+              className="bg-[#1c1c1e] border border-zinc-800 rounded-2xl p-6 w-full max-w-sm text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+
+              {/* Icon */}
+              <div className="w-12 h-12 bg-[#18181b] border border-zinc-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  width="22" height="22" viewBox="0 0 24 24"
+                  fill="none" stroke="#a1a1aa"
+                  strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+              </div>
+
+              {/* Text */}
+              <h3 className="text-white font-medium text-base mb-2">
+                Reset Progress?
+              </h3>
+              <p className="text-zinc-500 text-sm leading-relaxed mb-4">
+                This will clear all your progress for{" "}
+                <span className="text-zinc-300">
+                  {levelInfo?.label} · {levelInfo?.name}
+                </span>
+                . This cannot be undone.
+              </p>
+
+              {/* Current stats preview */}
+              <div className="flex justify-center gap-4 bg-[#111113] border border-zinc-800 rounded-xl px-4 py-3 mb-5">
+                {[
+                  { value: stats.streak, label: "Streak" },
+                  { value: `${accuracy}%`, label: "Accuracy" },
+                  { value: stats.learned, label: "Learned" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <div className="text-base font-medium text-white">
+                      {s.value}
+                    </div>
+                    <div className="text-zinc-600 text-xs uppercase tracking-widest mt-0.5">
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="h-px bg-zinc-800 mb-4" />
+
+              {/* Buttons */}
+              <button
+                onClick={handleReset}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2"
+              >
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor"
+                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+                Reset Progress
+              </button>
+
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </main>
