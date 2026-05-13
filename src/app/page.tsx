@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { levels } from "@/lib/levels"
+import InstallButtons from "@/components/InstallButtons";
 
 export default function Home() {
   return (
     <main>
-
       {/* ── WHITE HERO ── */}
       <section className="bg-white px-6 pt-20 pb-24 text-center">
 
@@ -62,7 +62,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-
+        <InstallButtons />
       </section>
 
       {/* ── DIAGONAL CUT ── */}
