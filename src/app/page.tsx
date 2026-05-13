@@ -9,14 +9,14 @@ export default function Home() {
       <section className="bg-white px-6 pt-20 pb-24 text-center">
 
         {/* Pill */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 mb-6">
+        <div className="inline-flex items-center gap-4 px-3 py-1 mb-6">
           <img
             src="/icons/icon-384x384.png"
             alt="Vokab"
-            className="w-32 h-32 rounded-md"
+            className="w-20 h-20 rounded-md"
           />
-          <span className="text-6xl font-bold text-zinc-700 tracking-tight leading-none">
-            okab
+          <span className="text-4xl font-bold text-zinc-700 tracking-tight leading-none">
+            Vokab
           </span>
         </div>
 
