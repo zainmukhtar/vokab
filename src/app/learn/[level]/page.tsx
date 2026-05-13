@@ -351,9 +351,6 @@ export default function LearnPage() {
                   ✓ &nbsp;Got it
                 </button>
               </div>
-
-            {/* placeholder spacing when not revealed */}
-            <div className="mb-8" />
           </>
         )}
 
