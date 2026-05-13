@@ -214,7 +214,7 @@ export default function LearnPage() {
               /* FRONT — single centered card */
               <div
                 onClick={handleReveal}
-                className="w-full bg-[#111113] border border-zinc-800 rounded-2xl p-10 text-center cursor-pointer hover:border-zinc-600 transition-colors duration-200 relative overflow-hidden mb-6 min-h-[360px] flex flex-col items-center justify-center"
+                className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-2xl p-10 text-center cursor-pointer hover:border-zinc-600 transition-colors duration-200 relative overflow-hidden mb-6 min-h-[360px] flex flex-col items-center justify-center"
               >
                 {/* Glow line */}
                 <div
@@ -248,7 +248,7 @@ export default function LearnPage() {
 
               /* BACK — split card */
               <div
-                className="w-full bg-[#111113] border border-zinc-800 rounded-2xl overflow-hidden mb-6 relative"
+                className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-2xl overflow-hidden mb-6 relative"
               >
                 {/* Glow line */}
                 <div
@@ -278,7 +278,7 @@ export default function LearnPage() {
                   </div>
 
                   {/* Right — English */}
-                  <div className="p-8 bg-[#0d0d0f] flex flex-col justify-center">
+                  <div className="p-8 bg-[#161618] flex flex-col justify-center">
                     <p
                       className="font-medium text-white tracking-tight mb-1"
                       style={{
@@ -315,7 +315,6 @@ export default function LearnPage() {
             )}
 
             {/* ── ASSESSMENT BUTTONS ── */}
-            {isRevealed && (
               <div className="flex gap-3 w-full mb-8">
                 <button
                   onClick={() => handleAnswer(false)}
@@ -342,10 +341,9 @@ export default function LearnPage() {
                   ✓ &nbsp;Got it
                 </button>
               </div>
-            )}
 
             {/* placeholder spacing when not revealed */}
-            {!isRevealed && <div className="mb-8" />}
+            <div className="mb-8" />
           </>
         )}
 
@@ -358,7 +356,7 @@ export default function LearnPage() {
           ].map((s) => (
             <div
               key={s.label}
-              className="bg-[#111113] border border-zinc-800 rounded-xl py-4 text-center"
+              className="bg-[#1c1c1e] border border-zinc-800 rounded-xl py-4 text-center"
             >
               <div className="text-xl font-medium text-white mb-0.5">
                 {s.value}
