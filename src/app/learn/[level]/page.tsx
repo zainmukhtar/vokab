@@ -1,11 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { levels } from "@/lib/levels"
 import { Word } from "@/lib/types"
+
+type Stats = {
+  streak: number
+  correct: number
+  total: number
+  learned: number
+}
 
 export default function LearnPage() {
   const params = useParams()
@@ -15,10 +20,34 @@ export default function LearnPage() {
 
   const [words, setWords] = useState<Word[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isFlipped, setIsFlipped] = useState(false)  // ← NEW
+  const [isRevealed, setIsRevealed] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
+  const [stats, setStats] = useState<Stats>({
+    streak: 0,
+    correct: 0,
+    total: 0,
+    learned: 0,
+  })
+  const [animating, setAnimating] = useState(false)
 
+  // Load stats from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(`vokab-stats-${levelCode}`)
+    if (saved) setStats(JSON.parse(saved))
+  }, [levelCode])
+
+  // Save stats to localStorage whenever they change
+  useEffect(() => {
+    if (stats.total > 0) {
+      localStorage.setItem(
+        `vokab-stats-${levelCode}`,
+        JSON.stringify(stats)
+      )
+    }
+  }, [stats, levelCode])
+
+  // Fetch words
   useEffect(() => {
     async function fetchWords() {
       try {
@@ -27,7 +56,7 @@ export default function LearnPage() {
         const data = await response.json()
         if (!response.ok) throw new Error(data.error)
         setWords(data.data)
-      } catch (err) {
+      } catch {
         setError("Failed to load vocabulary. Please try again.")
       } finally {
         setIsLoading(false)
@@ -36,173 +65,312 @@ export default function LearnPage() {
     fetchWords()
   }, [levelCode])
 
-  // When moving to next/previous, always flip back to German side
-  const handleNext = () => {
-    if (currentIndex < words.length - 1) {
-      setIsFlipped(false)          // ← reset flip
-      setCurrentIndex(currentIndex + 1)
-    }
+  const handleReveal = () => {
+    if (!isRevealed) setIsRevealed(true)
   }
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setIsFlipped(false)          // ← reset flip
-      setCurrentIndex(currentIndex - 1)
-    }
-  }
+  const handleAnswer = useCallback(
+    (gotIt: boolean) => {
+      if (animating) return
+      setAnimating(true)
+
+      // Update stats
+      setStats((prev) => {
+        const newCorrect = gotIt ? prev.correct + 1 : prev.correct
+        const newTotal = prev.total + 1
+        const newStreak = gotIt ? prev.streak + 1 : 0
+        const newLearned = gotIt ? prev.learned + 1 : prev.learned
+        return {
+          correct: newCorrect,
+          total: newTotal,
+          streak: newStreak,
+          learned: newLearned,
+        }
+      })
+
+      // Move to next word after short delay
+      setTimeout(() => {
+        setIsRevealed(false)
+        setCurrentIndex((prev) =>
+          prev < words.length - 1 ? prev + 1 : prev
+        )
+        setAnimating(false)
+      }, 300)
+    },
+    [animating, words.length]
+  )
+
+  const accuracy =
+    stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0
 
   const currentWord = words[currentIndex]
 
-  // ── Loading state ──
+  // ── Loading ──
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-700 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-500">Loading vocabulary...</p>
-          <p className="text-slate-400 text-xs mt-2">
-            First load may take 20–30 seconds
+      <main className="min-h-screen bg-[#09090b] flex items-center justify-center">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)
+            `,
+            backgroundSize: "40px 40px",
+          }}
+        />
+        <div className="text-center relative z-10">
+          <div className="w-8 h-8 border-2 border-zinc-700 border-t-zinc-300 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-zinc-500 text-sm">Loading vocabulary...</p>
+          <p className="text-zinc-700 text-xs mt-1">
+            First load may take 20–30s
           </p>
         </div>
       </main>
     )
   }
 
-  // ── Error state ──
+  // ── Error ──
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <main className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button onClick={() => router.push("/")}>Go back home</Button>
+          <p className="text-red-500 text-sm mb-4">{error}</p>
+          <button
+            onClick={() => router.push("/")}
+            className="text-zinc-400 text-sm border border-zinc-700 px-4 py-2 rounded-lg hover:border-zinc-500 transition-colors"
+          >
+            Go back home
+          </button>
         </div>
       </main>
     )
   }
 
-  // ── Main UI ──
+  // ── Main ──
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <main className="min-h-screen bg-[#09090b] flex flex-col relative overflow-hidden">
 
-      {/* Top bar */}
-      <div className="max-w-xl mx-auto flex items-center justify-between mb-8">
-        <Button variant="ghost" onClick={() => router.push("/")}>
+      {/* ── NAV ── */}
+      <nav className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+        <button
+          onClick={() => router.push("/")}
+          className="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+        >
           ← Back
-        </Button>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{levelInfo?.label}</Badge>
-          <span className="text-slate-500 text-sm">{levelInfo?.name}</span>
+        </button>
+
+        {/* Level chip */}
+        <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1">
+          <div
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: levelInfo?.glowColor }}
+          />
+          <span className="text-zinc-400 text-xs">
+            {levelInfo?.label} · {levelInfo?.name}
+          </span>
         </div>
-        <span className="text-slate-400 text-sm">
+
+        <span className="text-zinc-600 text-xs">
           {currentIndex + 1} / {words.length}
         </span>
-      </div>
+      </nav>
 
-      {/* Progress bar */}
-      <div className="max-w-xl mx-auto mb-10">
-        <div className="w-full bg-slate-200 rounded-full h-1.5">
+      {/* ── PIP PROGRESS ── */}
+      <div className="relative z-10 flex gap-1 px-6 py-3 border-b border-zinc-900">
+        {Array.from({ length: Math.min(words.length, 20) }).map((_, i) => (
           <div
-            className="bg-slate-700 h-1.5 rounded-full transition-all duration-300"
-            style={{ width: `${((currentIndex + 1) / words.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* ── Flip Card ── */}
-      {currentWord && (
-        <div
-          className="max-w-xl mx-auto mb-10"
-          style={{ perspective: "1000px" }}   
-          // perspective gives the 3D depth effect
-          // without it the flip looks flat
-        >
-          <div
-            onClick={() => setIsFlipped(!isFlipped)}
+            key={i}
+            className="h-0.5 flex-1 rounded-full transition-colors duration-300"
             style={{
-              transformStyle: "preserve-3d",
-              transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-              transition: "transform 0.5s ease",
-              position: "relative",
-              height: "340px",
-              cursor: "pointer",
+              background:
+                i < currentIndex
+                  ? "#fff"
+                  : i === currentIndex
+                  ? "#52525b"
+                  : "#27272a",
             }}
-          >
+          />
+        ))}
+        {words.length > 20 && (
+          <span className="text-zinc-700 text-xs ml-1">
+            +{words.length - 20}
+          </span>
+        )}
+      </div>
 
-            {/* ── FRONT — German word ── */}
+      {/* ── CONTENT ── */}
+      <div className="relative z-10 flex flex-col items-center flex-1 px-6 py-8 max-w-3xl mx-auto w-full">
+
+        <p className="text-zinc-600 text-xs uppercase tracking-widest mb-6">
+          {isRevealed ? "Did you know it?" : "Do you know this word?"}
+        </p>
+
+        {/* ── CARD ── */}
+        {currentWord && (
+          <>
+            {!isRevealed ? (
+
+              /* FRONT — single centered card */
+              <div
+                onClick={handleReveal}
+                className="w-full bg-[#111113] border border-zinc-800 rounded-2xl p-10 text-center cursor-pointer hover:border-zinc-600 transition-colors duration-200 relative overflow-hidden mb-6 min-h-[360px] flex flex-col items-center justify-center"
+              >
+                {/* Glow line */}
+                <div
+                  className="absolute top-0 left-1/4 right-1/4 h-px"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${levelInfo?.glowColor}, transparent)`,
+                  }}
+                />
+
+                <h2 className="text-5xl font-medium text-white tracking-tight mb-4">
+                  {currentWord.german}
+                </h2>
+
+                <div className="flex items-center justify-center gap-2 mb-8">
+                  {currentWord.gender && (
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#0c1a3e] text-blue-400 border border-blue-900">
+                      {currentWord.gender}
+                    </span>
+                  )}
+                  <span className="text-xs px-2.5 py-1 rounded-full border border-zinc-800 text-zinc-500">
+                    {currentWord.pos}
+                  </span>
+                </div>
+
+                <p className="text-zinc-700 text-xs uppercase tracking-widest">
+                  tap to reveal →
+                </p>
+              </div>
+
+            ) : (
+
+              /* BACK — split card */
+              <div
+                className="w-full bg-[#111113] border border-zinc-800 rounded-2xl overflow-hidden mb-6 relative"
+              >
+                {/* Glow line */}
+                <div
+                  className="absolute top-0 left-1/4 right-1/4 h-px"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${levelInfo?.glowColor}, transparent)`,
+                  }}
+                />
+
+                <div className="grid grid-cols-2 min-h-[360px]">
+
+                  {/* Left — German */}
+                  <div className="p-8 border-r border-zinc-800 flex flex-col justify-center">
+                    <h2 className="text-3xl font-medium text-white tracking-tight mb-3">
+                      {currentWord.german}
+                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {currentWord.gender && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#0c1a3e] text-blue-400 border border-blue-900">
+                          {currentWord.gender}
+                        </span>
+                      )}
+                      <span className="text-xs px-2 py-0.5 rounded-full border border-zinc-800 text-zinc-600">
+                        {currentWord.pos}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right — English */}
+                  <div className="p-8 bg-[#0d0d0f] flex flex-col justify-center">
+                    <p
+                      className="font-medium text-white tracking-tight mb-1"
+                      style={{
+                        fontSize: currentWord.english.length > 30
+                          ? "14px"
+                          : currentWord.english.length > 15
+                          ? "18px"
+                          : "24px",
+                        lineHeight: "1.3",
+                      }}
+                    >
+                      {currentWord.english}
+                    </p>
+                    {currentWord.all_translations !== currentWord.english && (
+                      <p className="text-zinc-600 text-xs mb-4">
+                        also: {currentWord.all_translations}
+                      </p>
+                    )}
+                    {currentWord.example_de && (
+                      <div className="border-l-2 border-zinc-800 pl-3 mt-2">
+                        <p className="text-zinc-400 text-xs leading-relaxed mb-1">
+                          {currentWord.example_de}
+                        </p>
+                        <p className="text-zinc-600 text-xs leading-relaxed">
+                          {currentWord.example_en}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+
+            )}
+
+            {/* ── ASSESSMENT BUTTONS ── */}
+            {isRevealed && (
+              <div className="flex gap-3 w-full mb-8">
+                <button
+                  onClick={() => handleAnswer(false)}
+                  disabled={animating}
+                  className="flex-1 py-3 rounded-xl text-sm font-medium transition-colors duration-150 border"
+                  style={{
+                    background: "#1a0505",
+                    color: "#ef4444",
+                    borderColor: "#7f1d1d",
+                  }}
+                >
+                  ✗ &nbsp;Didn't know
+                </button>
+                <button
+                  onClick={() => handleAnswer(true)}
+                  disabled={animating}
+                  className="flex-1 py-3 rounded-xl text-sm font-medium transition-colors duration-150 border"
+                  style={{
+                    background: "#051a0e",
+                    color: "#22c55e",
+                    borderColor: "#14532d",
+                  }}
+                >
+                  ✓ &nbsp;Got it
+                </button>
+              </div>
+            )}
+
+            {/* placeholder spacing when not revealed */}
+            {!isRevealed && <div className="mb-8" />}
+          </>
+        )}
+
+        {/* ── STATS ── */}
+        <div className="grid grid-cols-3 gap-3 w-full">
+          {[
+            { value: stats.streak, label: "Streak" },
+            { value: `${accuracy}%`, label: "Accuracy" },
+            { value: stats.learned, label: "Learned" },
+          ].map((s) => (
             <div
-              style={{ backfaceVisibility: "hidden" }}
-              className="absolute inset-0 bg-white rounded-2xl shadow-md flex flex-col items-center justify-center p-8 select-none"
+              key={s.label}
+              className="bg-[#111113] border border-zinc-800 rounded-xl py-4 text-center"
             >
-              <p className="text-slate-400 text-sm mb-6 tracking-widest uppercase">
-                Tap to reveal
-              </p>
-              <h2 className="text-5xl font-bold text-slate-800 mb-4 text-center">
-                {currentWord.german}
-              </h2>
-              <div className="flex items-center gap-2">
-                {currentWord.gender && (
-                  <Badge variant="secondary">{currentWord.gender}</Badge>
-                )}
-                <Badge variant="outline">{currentWord.pos}</Badge>
+              <div className="text-xl font-medium text-white mb-0.5">
+                {s.value}
+              </div>
+              <div className="text-zinc-600 text-xs uppercase tracking-widest">
+                {s.label}
               </div>
             </div>
-
-            {/* ── BACK — English translation ── */}
-            <div
-              style={{
-                backfaceVisibility: "hidden",
-                transform: "rotateY(180deg)",  
-                // pre-rotated so it starts facing away
-                // when the parent flips 180deg they cancel out = facing forward
-              }}
-              className="absolute inset-0 bg-slate-800 rounded-2xl shadow-md flex flex-col items-center justify-center p-8 select-none"
-            >
-              <p className="text-slate-400 text-sm mb-4 tracking-widest uppercase">
-                Translation
-              </p>
-              <h2 className="text-4xl font-bold text-white mb-2 text-center">
-                {currentWord.english}
-              </h2>
-              {currentWord.all_translations !== currentWord.english && (
-                <p className="text-slate-400 text-sm mb-6 text-center">
-                  also: {currentWord.all_translations}
-                </p>
-              )}
-
-              {/* Example sentence */}
-              {currentWord.example_de && (
-                <div className="bg-slate-700 rounded-lg p-4 w-full mt-2">
-                  <p className="text-slate-200 text-sm font-medium mb-1 text-center">
-                    {currentWord.example_de}
-                  </p>
-                  <p className="text-slate-400 text-sm text-center">
-                    {currentWord.example_en}
-                  </p>
-                </div>
-              )}
-            </div>
-
-          </div>
+          ))}
         </div>
-      )}
 
-      {/* Navigation */}
-      <div className="max-w-xl mx-auto flex justify-between">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-        >
-          ← Previous
-        </Button>
-        <Button
-          onClick={handleNext}
-          disabled={currentIndex === words.length - 1}
-        >
-          Next →
-        </Button>
       </div>
-
     </main>
   )
 }
